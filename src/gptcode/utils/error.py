@@ -1,8 +1,8 @@
-class CodeError(Exception):
+class GPTCodeError(Exception):
     """GPTCode base error"""
 
 
-class PipInstallError(CodeError):
+class PipInstallError(GPTCodeError):
     """Raise when failed to install package."""
 
     def __init__(self, package):
@@ -12,5 +12,5 @@ class PipInstallError(CodeError):
 def wrap_error(e: Exception) -> Exception:
     """Add a type to exception `e` while ensuring that the original type is not changed"""
 
-    e.__class__ = type(e.__class__.__name__, (CodeError, e.__class__), {})
+    e.__class__ = type(e.__class__.__name__, (GPTCodeError, e.__class__), {})
     return e
