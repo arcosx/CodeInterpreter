@@ -6,8 +6,12 @@ import os
 import psutil
 
 
+#  tips: clear all jupyter thread
+#  ps aux | grep jupyter | grep -v grep | awk '{ print $2 }' | xargs kill -9
+
+
 def test_manager_init():
-    m = LocalJupyterManager()
+    m = LocalJupyterManager(port=8890)
     m.init()
 
     assert os.path.exists(".sandbox")
@@ -19,7 +23,7 @@ def test_manager_init():
 
 
 def test_manager_alist():
-    m = LocalJupyterManager()
+    m = LocalJupyterManager(port=8891)
 
     async def run_ainit():
         await m.ainit()

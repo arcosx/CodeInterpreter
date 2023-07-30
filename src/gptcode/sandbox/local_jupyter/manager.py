@@ -1,6 +1,7 @@
 import asyncio
 import os
 import subprocess
+import time
 from typing import List, Union
 
 import aiohttp
@@ -16,13 +17,14 @@ import_jupyter_kernel_gateway()
 
 
 class LocalJupyterManager(Manager):
-    def __init__(self, workdir: str = ".sandbox") -> None:
+    def __init__(self, workdir: str = ".sandbox", port: int = 8888) -> None:
         super().__init__()
         self.session: Union[requests.Session, aiohttp.ClientSession] = None
         self.subprocess: Union[
             asyncio.subprocess.Process, subprocess.Popen, None
         ] = None
         self.workdir = workdir
+        self.port = port
 
     def init(self) -> None:
         self.session = requests.Session()
@@ -40,7 +42,7 @@ class LocalJupyterManager(Manager):
                 "jupyter",
                 "kernelgateway",
                 "--KernelGatewayApp.ip='0.0.0.0'",
-                "--KernelGatewayApp.port=8888",
+                f"--KernelGatewayApp.port={self.port}",
                 "--JupyterWebsocketPersonality.list_kernels=true",
                 "--KernelGatewayApp.log_level=DEBUG",
                 "--JupyterWebsocketPersonality.env_whitelist JUPYTER_DATA_DIR",
@@ -50,12 +52,24 @@ class LocalJupyterManager(Manager):
             cwd=workdir,
             env=env,
         )
-        gptcode_log.debug(f"Started jupyter kernelgateway pid {self.subprocess.pid}")
+        gptcode_log.debug(f"Starting jupyter kernelgateway pid {self.subprocess.pid}")
         with open(
             os.path.join(workdir, f"{self.subprocess.pid}.pid"),
             "w",
         ) as p:
             p.write("kernel")
+
+        while True:
+            try:
+                response = self.session.get(f"http://0.0.0.0:{self.port}/api")
+                if response.status_code == 200:
+                    break
+            except requests.exceptions.ConnectionError:
+                pass
+            gptcode_log.debug("Waiting for kernelgateway to start...")
+            time.sleep(1)
+
+        gptcode_log.debug("kernelgateway start success!")
 
     async def ainit(self) -> None:
         self.session = aiohttp.ClientSession()
@@ -73,7 +87,7 @@ class LocalJupyterManager(Manager):
             "jupyter",
             "kernelgateway",
             "--KernelGatewayApp.ip='0.0.0.0'",
-            "--KernelGatewayApp.port=8888",
+            f"--KernelGatewayApp.port={self.port}",
             "--JupyterWebsocketPersonality.list_kernels=true",
             "--KernelGatewayApp.log_level=DEBUG",
             "--JupyterWebsocketPersonality.env_whitelist JUPYTER_DATA_DIR",
@@ -82,12 +96,25 @@ class LocalJupyterManager(Manager):
             cwd=workdir,
             env=env,
         )
-        gptcode_log.debug(f"Started jupyter kernelgateway pid {self.subprocess.pid}")
+        gptcode_log.debug(f"Starting jupyter kernelgateway pid {self.subprocess.pid}")
         with open(
             os.path.join(workdir, f"{self.subprocess.pid}.pid"),
             "w",
         ) as p:
             p.write("kernel")
+
+        while True:
+            try:
+                response = await self.session.get(f"http://0.0.0.0:{self.port}/api")
+                if response.status == 200:
+                    break
+            except aiohttp.ClientConnectorError:
+                pass
+            except aiohttp.ServerDisconnectedError:
+                pass
+            await asyncio.sleep(1)
+
+        gptcode_log.debug("kernelgateway start success!")
 
     def list(self) -> LocalJupyterSandbox:
         ...
