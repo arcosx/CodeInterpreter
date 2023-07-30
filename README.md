@@ -1,2 +1,2 @@
-# GPTCode: The best open-source LLM Code interpreter.
+# GPTCode: The Best Open Source LLM Code Interpreter.
 

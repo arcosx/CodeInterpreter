@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import List, Optional
 from gptcode.sandbox.schema import SandboxStatus, SandboxOutput, SandboxFile
 import os
 from gptcode.sandbox.sandbox import Sandbox
@@ -7,19 +7,27 @@ from gptcode.sandbox.sandbox import Sandbox
 
 class Manager(ABC):
     @abstractmethod
+    def init(self):
+        ...
+
+    @abstractmethod
+    async def ainit(self):
+        ...
+
+    @abstractmethod
     def list(self) -> Sandbox:
         ...
 
     @abstractmethod
-    async def astlistart(self) -> Sandbox:
+    async def alist(self) -> List[Sandbox]:
         ...
 
     @abstractmethod
-    def start(self, id: str | None) -> Sandbox:
+    def start(self) -> Sandbox:
         ...
 
     @abstractmethod
-    async def astart(self, id: str | None) -> Sandbox:
+    async def astart(self) -> Sandbox:
         ...
 
     @abstractmethod
@@ -44,14 +52,6 @@ class Manager(ABC):
 
     @abstractmethod
     async def arestart(self, id: str) -> SandboxStatus:
-        ...
-
-    @abstractmethod
-    def stop(self, id: str) -> SandboxStatus:
-        ...
-
-    @abstractmethod
-    async def astop(self, id: str) -> SandboxStatus:
         ...
 
     @abstractmethod

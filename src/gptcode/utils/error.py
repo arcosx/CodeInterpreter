@@ -5,8 +5,13 @@ class GPTCodeError(Exception):
 class PipInstallError(GPTCodeError):
     """Raise when failed to install package."""
 
-    def __init__(self, package):
-        super().__init__(f"Ran into error installing {package}.")
+    def __init__(self, package: str):
+        super().__init__(f"Run into error installing {package}.")
+
+
+class PythonPackageNotFoundError(GPTCodeError):
+    def __init__(self, package: str, hint: str):
+        super().__init__(f"Python package {package} not found.{hint}")
 
 
 def wrap_error(e: Exception) -> Exception:

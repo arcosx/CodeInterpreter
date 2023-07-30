@@ -1,2 +1,2 @@
 pytest:
-	pytest tests/
+	pytest --log-cli-level=DEBUG tests/ 

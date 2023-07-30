@@ -1,6 +1,4 @@
-__all__ = [
-    "import_openai",
-]
+__all__ = ["import_openai", "import_jupyter_kernel_gateway"]
 
 from typing import Optional
 import importlib.util
@@ -18,3 +16,7 @@ def _check_library(libname: str, prompt: bool = True, package: Optional[str] = N
 
 def import_openai():
     _check_library("openai")
+
+
+def import_jupyter_kernel_gateway():
+    _check_library("jupyter_kernel_gateway")
