@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Union
 from gptcode.sandbox.schema import SandboxStatus, SandboxOutput, SandboxFile
 import os
 
@@ -8,15 +8,11 @@ class Sandbox(ABC):
     id: str
 
     @abstractmethod
-    def run(
-        self, code: str | None, file_path: Optional[os.PathLike] | None
-    ) -> SandboxOutput:
+    def run(self, code: Union[str, os.PathLike]) -> SandboxOutput:
         ...
 
     @abstractmethod
-    async def arun(
-        self, code: str | None, file_path: Optional[os.PathLike] | None
-    ) -> SandboxOutput:
+    async def arun(self, code: Union[str, os.PathLike]) -> SandboxOutput:
         ...
 
     @abstractmethod

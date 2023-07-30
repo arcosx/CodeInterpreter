@@ -127,16 +127,18 @@ class LocalJupyterManager(Manager):
     def start(self) -> LocalJupyterSandbox:
         response = self.session.post(f"{self.base_HTTP_URL}/kernels", json={})
         kernel_id = response.json()["id"]
-        ws = ws_sync_connect(f"{self.base_WebSocket_URL}/kernels/{kernel_id}/channels")
+        ws_url = f"{self.base_WebSocket_URL}/kernels/{kernel_id}/channels"
+        ws = ws_sync_connect(ws_url)
 
-        return LocalJupyterSandbox(id=kernel_id, ws=ws)
+        return LocalJupyterSandbox(id=kernel_id, ws_url=ws_url, ws=ws)
 
     async def astart(self) -> LocalJupyterSandbox:
         response = self.session.post(f"{self.base_HTTP_URL}/kernels", json={})
         kernel_id = response.json()["id"]
-        ws = await ws_connect(f"{self.base_WebSocket_URL}/kernels/{kernel_id}/channels")
+        ws_url = f"{self.base_WebSocket_URL}/kernels/{kernel_id}/channels"
+        ws = await ws_connect(ws_url)
 
-        return LocalJupyterSandbox(id=kernel_id, ws=ws)
+        return LocalJupyterSandbox(id=kernel_id, ws_url=ws_url, ws=ws)
 
     def get(self, id: str | None) -> LocalJupyterSandbox:
         ...
