@@ -6,6 +6,8 @@ from typing import List, Union
 
 import aiohttp
 import requests
+from websockets.client import connect as ws_connect
+from websockets.sync.client import connect as ws_sync_connect
 
 from gptcode.sandbox.local_jupyter.sandbox import LocalJupyterSandbox
 from gptcode.sandbox.manager import Manager
@@ -61,7 +63,7 @@ class LocalJupyterManager(Manager):
 
         while True:
             try:
-                response = self.session.get(f"http://0.0.0.0:{self.port}/api")
+                response = self.session.get(self.base_HTTP_URL)
                 if response.status_code == 200:
                     break
             except requests.exceptions.ConnectionError:
@@ -105,7 +107,7 @@ class LocalJupyterManager(Manager):
 
         while True:
             try:
-                response = await self.session.get(f"http://0.0.0.0:{self.port}/api")
+                response = await self.session.get(self.base_HTTP_URL)
                 if response.status == 200:
                     break
             except aiohttp.ClientConnectorError:
@@ -123,10 +125,18 @@ class LocalJupyterManager(Manager):
         ...
 
     def start(self) -> LocalJupyterSandbox:
-        ...
+        response = self.session.post(f"{self.base_HTTP_URL}/kernels", json={})
+        kernel_id = response.json()["id"]
+        ws = ws_sync_connect(f"{self.base_WebSocket_URL}/kernels/{kernel_id}/channels")
+
+        return LocalJupyterSandbox(id=kernel_id, ws=ws)
 
     async def astart(self) -> LocalJupyterSandbox:
-        ...
+        response = self.session.post(f"{self.base_HTTP_URL}/kernels", json={})
+        kernel_id = response.json()["id"]
+        ws = await ws_connect(f"{self.base_WebSocket_URL}/kernels/{kernel_id}/channels")
+
+        return LocalJupyterSandbox(id=kernel_id, ws=ws)
 
     def get(self, id: str | None) -> LocalJupyterSandbox:
         ...
@@ -151,3 +161,27 @@ class LocalJupyterManager(Manager):
 
     async def adelete(self, id: str):
         ...
+
+    def stop(self) -> SandboxStatus:
+        if self.subprocess is not None:
+            self.subprocess.terminate()
+            self.subprocess.wait()
+            self.subprocess = None
+
+    async def astop(self) -> SandboxStatus:
+        if self.subprocess is not None:
+            self.subprocess.terminate()
+            await self.subprocess.wait()
+            self.subprocess = None
+
+        if self.session is not None:
+            await self.session.close()
+            self.session = None
+
+    @property
+    def base_HTTP_URL(self) -> str:
+        return f"http://0.0.0.0:{self.port}/api"
+
+    @property
+    def base_WebSocket_URL(self) -> str:
+        return f"ws://0.0.0.0:{self.port}/api"

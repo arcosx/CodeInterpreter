@@ -61,3 +61,11 @@ class Manager(ABC):
     @abstractmethod
     async def adelete(self, id: str):
         ...
+
+    @abstractmethod
+    def stop(self):
+        ...
+
+    @abstractmethod
+    async def astop(self):
+        ...
