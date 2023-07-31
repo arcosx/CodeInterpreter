@@ -9,6 +9,11 @@ class PipInstallError(GPTCodeError):
         super().__init__(f"Run into error installing {package}.")
 
 
+class SandboxRunMaxRetryError(GPTCodeError):
+    def __init__(self):
+        super().__init__(f"Sandbox run has reached the maximum number of attempts.")
+
+
 class PythonPackageNotFoundError(GPTCodeError):
     def __init__(self, package: str, hint: str):
         super().__init__(f"Python package {package} not found.{hint}")

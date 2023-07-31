@@ -5,7 +5,7 @@ import os
 from gptcode.sandbox.sandbox import Sandbox
 
 
-class Manager(ABC):
+class SandboxManager(ABC):
     @abstractmethod
     def init(self):
         ...
@@ -35,7 +35,7 @@ class Manager(ABC):
         ...
 
     @abstractmethod
-    async def get(self, id: str | None) -> Sandbox:
+    async def aget(self, id: str | None) -> Sandbox:
         ...
 
     @abstractmethod

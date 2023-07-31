@@ -15,3 +15,7 @@ class SandboxOutput(BaseModel):
 class SandboxFile(BaseModel):
     name: str
     content: Optional[bytes] = None
+
+
+class SandboxRunConfig(BaseModel):
+    retry: int = 3

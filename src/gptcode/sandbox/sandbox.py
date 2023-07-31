@@ -1,6 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Union
-from gptcode.sandbox.schema import SandboxStatus, SandboxOutput, SandboxFile
+from gptcode.sandbox.schema import (
+    SandboxStatus,
+    SandboxOutput,
+    SandboxFile,
+    SandboxRunConfig,
+)
 import os
 
 
@@ -8,11 +13,15 @@ class Sandbox(ABC):
     id: str
 
     @abstractmethod
-    def run(self, code: Union[str, os.PathLike]) -> SandboxOutput:
+    def run(
+        self, code: Union[str, os.PathLike], config: SandboxRunConfig
+    ) -> SandboxOutput:
         ...
 
     @abstractmethod
-    async def arun(self, code: Union[str, os.PathLike]) -> SandboxOutput:
+    async def arun(
+        self, code: Union[str, os.PathLike], config: SandboxRunConfig
+    ) -> SandboxOutput:
         ...
 
     @abstractmethod

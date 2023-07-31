@@ -2,15 +2,15 @@ import asyncio
 import os
 import subprocess
 import time
+from asyncio.subprocess import Process
 from typing import List, Union
-
+import signal
 import aiohttp
+import psutil
 import requests
-from websockets.client import connect as ws_connect
-from websockets.sync.client import connect as ws_sync_connect
 
 from gptcode.sandbox.local_jupyter.sandbox import LocalJupyterSandbox
-from gptcode.sandbox.manager import Manager
+from gptcode.sandbox.manager import SandboxManager
 from gptcode.sandbox.schema import SandboxStatus
 from gptcode.utils import import_jupyter_kernel_gateway
 from gptcode.utils.log import gptcode_log
@@ -18,20 +18,17 @@ from gptcode.utils.log import gptcode_log
 import_jupyter_kernel_gateway()
 
 
-class LocalJupyterManager(Manager):
+class LocalJupyterManager(SandboxManager):
     def __init__(self, workdir: str = ".sandbox", port: int = 8888) -> None:
         super().__init__()
         self.session: Union[requests.Session, aiohttp.ClientSession] = None
-        self.subprocess: Union[
-            asyncio.subprocess.Process, subprocess.Popen, None
-        ] = None
+        self.subprocess: Union[Process, subprocess.Popen, None] = None
         self.workdir = workdir
         self.port = port
 
     def init(self) -> None:
         self.session = requests.Session()
 
-        out = subprocess.PIPE
         workdir = os.path.abspath(self.workdir)
         os.makedirs(workdir, exist_ok=True)
         gptcode_log.debug("Starting kernelgateway...")
@@ -39,21 +36,24 @@ class LocalJupyterManager(Manager):
         env = os.environ.copy()
         env["JUPYTER_DATA_DIR"] = workdir
 
-        self.subprocess = subprocess.Popen(
-            [
-                "jupyter",
-                "kernelgateway",
-                "--KernelGatewayApp.ip='0.0.0.0'",
-                f"--KernelGatewayApp.port={self.port}",
-                "--JupyterWebsocketPersonality.list_kernels=true",
-                "--KernelGatewayApp.log_level=DEBUG",
-                "--JupyterWebsocketPersonality.env_whitelist JUPYTER_DATA_DIR",
-            ],
-            stdout=out,
-            stderr=out,
-            cwd=workdir,
-            env=env,
-        )
+        with open(
+            os.path.join(workdir, "jupyter-kernelgateway.log"), "w", encoding="utf-8"
+        ) as subprocess_log_file:
+            self.subprocess = subprocess.Popen(
+                [
+                    "jupyter",
+                    "kernelgateway",
+                    "--KernelGatewayApp.ip='0.0.0.0'",
+                    f"--KernelGatewayApp.port={self.port}",
+                    "--JupyterWebsocketPersonality.list_kernels=true",
+                    "--KernelGatewayApp.log_level=DEBUG",
+                    "--JupyterWebsocketPersonality.env_whitelist JUPYTER_DATA_DIR",
+                ],
+                stdout=subprocess_log_file,
+                stderr=subprocess_log_file,
+                cwd=workdir,
+                env=env,
+            )
         gptcode_log.debug(f"Starting jupyter kernelgateway pid {self.subprocess.pid}")
         with open(
             os.path.join(workdir, f"{self.subprocess.pid}.pid"),
@@ -63,7 +63,7 @@ class LocalJupyterManager(Manager):
 
         while True:
             try:
-                response = self.session.get(self.base_HTTP_URL)
+                response = self.session.get(self.base_http_url)
                 if response.status_code == 200:
                     break
             except requests.exceptions.ConnectionError:
@@ -84,20 +84,22 @@ class LocalJupyterManager(Manager):
         env = os.environ.copy()
         env["JUPYTER_DATA_DIR"] = workdir
 
-        out = asyncio.subprocess.PIPE
-        self.subprocess = await asyncio.create_subprocess_exec(
-            "jupyter",
-            "kernelgateway",
-            "--KernelGatewayApp.ip='0.0.0.0'",
-            f"--KernelGatewayApp.port={self.port}",
-            "--JupyterWebsocketPersonality.list_kernels=true",
-            "--KernelGatewayApp.log_level=DEBUG",
-            "--JupyterWebsocketPersonality.env_whitelist JUPYTER_DATA_DIR",
-            stdout=out,
-            stderr=out,
-            cwd=workdir,
-            env=env,
-        )
+        with open(
+            os.path.join(workdir, "jupyter-kernelgateway.log"), "w", encoding="utf-8"
+        ) as subprocess_log_file:
+            self.subprocess = await asyncio.create_subprocess_exec(
+                "jupyter",
+                "kernelgateway",
+                "--KernelGatewayApp.ip='0.0.0.0'",
+                f"--KernelGatewayApp.port={self.port}",
+                "--JupyterWebsocketPersonality.list_kernels=true",
+                "--KernelGatewayApp.log_level=DEBUG",
+                "--JupyterWebsocketPersonality.env_whitelist JUPYTER_DATA_DIR",
+                stdout=subprocess_log_file,
+                stderr=subprocess_log_file,
+                cwd=workdir,
+                env=env,
+            )
         gptcode_log.debug(f"Starting jupyter kernelgateway pid {self.subprocess.pid}")
         with open(
             os.path.join(workdir, f"{self.subprocess.pid}.pid"),
@@ -107,7 +109,7 @@ class LocalJupyterManager(Manager):
 
         while True:
             try:
-                response = await self.session.get(self.base_HTTP_URL)
+                response = await self.session.get(self.base_http_url)
                 if response.status == 200:
                     break
             except aiohttp.ClientConnectorError:
@@ -118,32 +120,34 @@ class LocalJupyterManager(Manager):
 
         gptcode_log.debug("kernelgateway start success!")
 
-    def list(self) -> LocalJupyterSandbox:
+    def list(self) -> List[LocalJupyterSandbox]:
         ...
 
     async def alist(self) -> List[LocalJupyterSandbox]:
         ...
 
     def start(self) -> LocalJupyterSandbox:
-        response = self.session.post(f"{self.base_HTTP_URL}/kernels", json={})
+        response = self.session.post(f"{self.base_http_url}/kernels", json={})
         kernel_id = response.json()["id"]
-        ws_url = f"{self.base_WebSocket_URL}/kernels/{kernel_id}/channels"
-        ws = ws_sync_connect(ws_url)
+        ws_url = f"{self.base_websocket_url}/kernels/{kernel_id}/channels"
 
-        return LocalJupyterSandbox(id=kernel_id, ws_url=ws_url, ws=ws)
+        return LocalJupyterSandbox.sync_init(
+            id=kernel_id, ws_url=ws_url, workdir=f"{self.workdir}/{kernel_id}"
+        )
 
     async def astart(self) -> LocalJupyterSandbox:
-        response = self.session.post(f"{self.base_HTTP_URL}/kernels", json={})
+        response = self.session.post(f"{self.base_http_url}/kernels", json={})
         kernel_id = response.json()["id"]
-        ws_url = f"{self.base_WebSocket_URL}/kernels/{kernel_id}/channels"
-        ws = await ws_connect(ws_url)
+        ws_url = f"{self.base_websocket_url}/kernels/{kernel_id}/channels"
 
-        return LocalJupyterSandbox(id=kernel_id, ws_url=ws_url, ws=ws)
+        return await LocalJupyterSandbox.async_init(
+            id=kernel_id, ws_url=ws_url, workdir=f"{self.workdir}/{kernel_id}"
+        )
 
     def get(self, id: str | None) -> LocalJupyterSandbox:
         ...
 
-    async def get(self, id: str | None) -> LocalJupyterSandbox:
+    async def aget(self, id: str | None) -> LocalJupyterSandbox:
         ...
 
     def status(self, id: str) -> SandboxStatus:
@@ -165,25 +169,38 @@ class LocalJupyterManager(Manager):
         ...
 
     def stop(self) -> SandboxStatus:
+        gptcode_log.debug("Begin stop sandbox manager")
         if self.subprocess is not None:
-            self.subprocess.terminate()
-            self.subprocess.wait()
-            self.subprocess = None
+            self.subprocess.send_signal(signal.SIGINT)
+            try:
+                self.subprocess.wait(30)
+            except subprocess.TimeoutExpired:
+                self.subprocess.kill()
+            finally:
+                self.subprocess = None
+        if self.session is not None:
+            self.session.close()
+            self.session = None
 
     async def astop(self) -> SandboxStatus:
+        gptcode_log.debug("Begin stop sandbox manager")
         if self.subprocess is not None:
-            self.subprocess.terminate()
-            await self.subprocess.wait()
-            self.subprocess = None
+            self.subprocess.send_signal(signal.SIGINT)
+            try:
+                await self.subprocess.wait()
+            except asyncio.TimeoutError:
+                self.subprocess.kill()
+            finally:
+                self.subprocess = None
 
         if self.session is not None:
             await self.session.close()
             self.session = None
 
     @property
-    def base_HTTP_URL(self) -> str:
+    def base_http_url(self) -> str:
         return f"http://0.0.0.0:{self.port}/api"
 
     @property
-    def base_WebSocket_URL(self) -> str:
+    def base_websocket_url(self) -> str:
         return f"ws://0.0.0.0:{self.port}/api"

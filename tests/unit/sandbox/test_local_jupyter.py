@@ -11,36 +11,46 @@ import psutil
 
 
 def test_manager_init():
-    manager = LocalJupyterManager(port=8890)
+    manager = LocalJupyterManager()
     manager.init()
 
     assert os.path.exists(".sandbox")
     assert manager.subprocess is not None
     assert psutil.pid_exists(manager.subprocess.pid)
+    assert os.path.exists(".sandbox/jupyter-kernelgateway.log")
     manager.stop()
 
     shutil.rmtree(".sandbox")
 
 
 def test_manager_alist():
-    manager = LocalJupyterManager(port=8891)
+    manager = LocalJupyterManager()
 
     async def run_ainit():
         await manager.ainit()
         assert os.path.exists(".sandbox")
         assert manager.subprocess is not None
         await manager.astop()
+        assert os.path.exists(".sandbox/jupyter-kernelgateway.log")
 
     asyncio.run(run_ainit())
 
     shutil.rmtree(".sandbox")
 
 
-def test_start():
+def test_sandbox_start():
+    manager = LocalJupyterManager()
+    manager.init()
+    sandbox = manager.start()
+    sandbox.ws.close()
+    manager.stop()
+    shutil.rmtree(".sandbox")
+
+
+def test_sandbox_astart():
     manager = LocalJupyterManager(port=8892)
     manager.init()
     sandbox = manager.start()
-    assert sandbox.ws is not None
     sandbox.ws.close()
     manager.stop()
     shutil.rmtree(".sandbox")
