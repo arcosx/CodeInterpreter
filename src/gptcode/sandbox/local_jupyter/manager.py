@@ -1,12 +1,12 @@
 import asyncio
 import os
+import signal
 import subprocess
 import time
 from asyncio.subprocess import Process
 from typing import List, Union
-import signal
+
 import aiohttp
-import psutil
 import requests
 
 from gptcode.sandbox.local_jupyter.sandbox import LocalJupyterSandbox
@@ -136,8 +136,9 @@ class LocalJupyterManager(SandboxManager):
         )
 
     async def astart(self) -> LocalJupyterSandbox:
-        response = self.session.post(f"{self.base_http_url}/kernels", json={})
-        kernel_id = response.json()["id"]
+        response = await self.session.post(f"{self.base_http_url}/kernels", json={})
+        data = await response.json()
+        kernel_id = data["id"]
         ws_url = f"{self.base_websocket_url}/kernels/{kernel_id}/channels"
 
         return await LocalJupyterSandbox.async_init(

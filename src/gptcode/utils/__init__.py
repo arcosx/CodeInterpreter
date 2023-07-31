@@ -1,7 +1,8 @@
 __all__ = ["import_openai", "import_jupyter_kernel_gateway"]
 
-from typing import Optional
 import importlib.util
+from typing import Optional
+
 from gptcode.utils.dependency import pip_install
 
 

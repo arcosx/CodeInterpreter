@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
-from gptcode.sandbox.schema import SandboxStatus, SandboxOutput, SandboxFile
-import os
+from typing import List
+
 from gptcode.sandbox.sandbox import Sandbox
+from gptcode.sandbox.schema import SandboxStatus
 
 
 class SandboxManager(ABC):

@@ -1,12 +1,9 @@
-from abc import ABC, abstractmethod
-from typing import Optional, Union
-from gptcode.sandbox.schema import (
-    SandboxStatus,
-    SandboxOutput,
-    SandboxFile,
-    SandboxRunConfig,
-)
 import os
+from abc import ABC, abstractmethod
+from typing import Union
+
+from gptcode.sandbox.schema import (SandboxFile, SandboxOutput,
+                                    SandboxRunConfig, SandboxStatus)
 
 
 class Sandbox(ABC):

@@ -1,10 +1,14 @@
 import asyncio
-import shutil
-import time
-from gptcode.sandbox.local_jupyter.manager import LocalJupyterManager
 import os
-import psutil
+import shutil
 
+import psutil
+import pytest
+
+from gptcode.sandbox.local_jupyter.manager import LocalJupyterManager
+from gptcode.sandbox.schema import SandboxRunConfig
+import tempfile
+from pathlib import Path
 
 #  tips: clear all jupyter thread
 #  ps aux | grep jupyter | grep -v grep | awk '{ print $2 }' | xargs kill -9
@@ -42,17 +46,87 @@ def test_sandbox_start():
     manager = LocalJupyterManager()
     manager.init()
     sandbox = manager.start()
-    sandbox.ws.recv(3)
+    sandbox.ws.recv()
     sandbox.ws.close()
     manager.stop()
     shutil.rmtree(".sandbox")
 
 
 def test_sandbox_astart():
-    manager = LocalJupyterManager(port=8892)
+    manager = LocalJupyterManager()
+
+    async def run_astart():
+        await manager.ainit()
+        sandbox = await manager.astart()
+        await sandbox.ws.recv()
+        await sandbox.ws.close()
+        await manager.astop()
+
+    asyncio.run(run_astart())
+    shutil.rmtree(".sandbox")
+
+
+def test_sandbox_run():
+    manager = LocalJupyterManager()
     manager.init()
     sandbox = manager.start()
-    sandbox.ws.recv(3)
+    sandbox_output = sandbox.run(
+        'print("hello,world")', config=SandboxRunConfig(retry=3)
+    )
+    assert sandbox_output.content == "hello,world"
+    assert sandbox_output.type == "text"
+
+    sandbox_output = sandbox.run(
+        'print("to the world")', config=SandboxRunConfig(retry=3)
+    )
+    assert sandbox_output.content == "to the world"
+    assert sandbox_output.type == "text"
+
     sandbox.ws.close()
+    manager.stop()
+    shutil.rmtree(".sandbox")
+
+
+def test_sandbox_arun():
+    manager = LocalJupyterManager()
+
+    async def run_arun():
+        await manager.ainit()
+        sandbox = await manager.astart()
+        sandbox_output = await sandbox.arun(
+            'print("hello,world")', config=SandboxRunConfig(retry=3)
+        )
+        assert sandbox_output.content == "hello,world"
+        assert sandbox_output.type == "text"
+
+        sandbox_output = await sandbox.arun(
+            'print("to the world")', config=SandboxRunConfig(retry=3)
+        )
+        assert sandbox_output.content == "to the world"
+        assert sandbox_output.type == "text"
+
+        await sandbox.ws.close()
+        await manager.astop()
+
+    asyncio.run(run_arun())
+    shutil.rmtree(".sandbox")
+
+
+def test_sandbox_upload():
+    test_file = tempfile.NamedTemporaryFile(delete=False)
+    test_file.write(b"test_content")
+    test_file.close()
+
+    manager = LocalJupyterManager()
+    manager.init()
+    sandbox = manager.start()
+    with open(test_file.name, "rb") as f:
+        content = f.read()
+
+    response = sandbox.upload(Path(test_file.name).name, content)
+    assert response.status == f"{Path(test_file.name).name} uploaded successfully"
+
+    with open(os.path.join(sandbox.workdir, Path(test_file.name).name), "rb") as file:
+        assert file.read() == content
     manager.stop()
     shutil.rmtree(".sandbox")

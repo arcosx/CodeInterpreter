@@ -1,6 +1,7 @@
 import subprocess
-from gptcode.utils.log import gptcode_log
+
 from gptcode.utils.error import PipInstallError
+from gptcode.utils.log import gptcode_log
 
 
 def pip_install(package: str, warn: bool = False):

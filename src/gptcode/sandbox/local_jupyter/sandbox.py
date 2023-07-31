@@ -11,12 +11,8 @@ from websockets.sync.client import ClientConnection
 from websockets.sync.client import connect as ws_sync_connect
 
 from gptcode.sandbox.sandbox import Sandbox
-from gptcode.sandbox.schema import (
-    SandboxFile,
-    SandboxOutput,
-    SandboxRunConfig,
-    SandboxStatus,
-)
+from gptcode.sandbox.schema import (SandboxFile, SandboxOutput,
+                                    SandboxRunConfig, SandboxStatus)
 from gptcode.utils.error import SandboxRunMaxRetryError
 from gptcode.utils.log import gptcode_log
 
