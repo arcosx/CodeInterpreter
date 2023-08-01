@@ -54,10 +54,11 @@ class LocalJupyterManager(SandboxManager):
                 cwd=workdir,
                 env=env,
             )
-        gptcode_log.debug(f"Starting jupyter kernelgateway pid {self.subprocess.pid}")
+        gptcode_log.debug("Starting jupyter kernelgateway pid %s",self.subprocess.pid)
         with open(
             os.path.join(workdir, f"{self.subprocess.pid}.pid"),
             "w",
+            encoding="utf-8"
         ) as p:
             p.write("kernel")
 
@@ -101,10 +102,11 @@ class LocalJupyterManager(SandboxManager):
                 cwd=workdir,
                 env=env,
             )
-        gptcode_log.debug(f"Starting jupyter kernelgateway pid {self.subprocess.pid}")
+        gptcode_log.debug("Starting jupyter kernelgateway pid %s",self.subprocess.pid)
         with open(
             os.path.join(workdir, f"{self.subprocess.pid}.pid"),
             "w",
+            encoding="utf-8"
         ) as p:
             p.write("kernel")
 
@@ -154,10 +156,10 @@ class LocalJupyterManager(SandboxManager):
         
         return sandbox
 
-    def get(self, id: str | None) -> LocalJupyterSandbox:
+    def get(self, id: str) -> LocalJupyterSandbox:
         return self.sandboxs[id]
 
-    async def aget(self, id: str | None) -> LocalJupyterSandbox:
+    async def aget(self, id: str) -> LocalJupyterSandbox:
         return self.sandboxs[id]
 
 

@@ -1,6 +1,5 @@
 import logging
 from gptcode.sandbox.local_jupyter.manager import LocalJupyterManager
-from gptcode.sandbox.schema import SandboxRunConfig
 import gptcode
 
 logger = logging.getLogger(f"gptcode:{gptcode.__version__}")
@@ -25,7 +24,6 @@ def main():
         
     finally:
         manager.stop()
-        pass
     
 if __name__ == "__main__":
     main()
