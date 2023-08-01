@@ -222,7 +222,9 @@ class LocalJupyterSandbox(Sandbox):
         return SandboxResponse(content=f"{file_name} uploaded successfully")
 
     async def aupload(self, file_name: str, content: bytes) -> SandboxResponse:
-        return await asyncio.to_thread(self.upload, file_name, content)
+        return await asyncio.get_running_loop().run_in_executor(
+            None, self.upload, file_name, content
+        )
 
     def download(self, file_name: str) -> SandboxFile:
         with open(os.path.join(self.workdir, file_name), "rb") as file:
@@ -231,7 +233,9 @@ class LocalJupyterSandbox(Sandbox):
         return SandboxFile(name=file_name, content=content)
 
     async def adownload(self, file_name: str) -> SandboxFile:
-        return await asyncio.to_thread(self.download, file_name)
+        return await asyncio.get_running_loop().run_in_executor(
+            None, self.download, file_name
+        )
 
     def close_websocket(self) -> None:
         self.ws.close()
