@@ -11,7 +11,7 @@ class PipInstallError(GPTCodeError):
 
 class SandboxRunMaxRetryError(GPTCodeError):
     def __init__(self):
-        super().__init__(f"Sandbox run has reached the maximum number of attempts.")
+        super().__init__("Sandbox run has reached the maximum number of attempts.")
 
 
 class PythonPackageNotFoundError(GPTCodeError):

@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Union
 
 from gptcode.sandbox.schema import (SandboxFile, SandboxRunOutput,
-                                    SandboxRunConfig, SandboxResponse)
+                                    SandboxResponse)
 
 
 class Sandbox(ABC):

@@ -11,9 +11,7 @@ from websockets.sync.client import ClientConnection
 from websockets.sync.client import connect as ws_sync_connect
 
 from gptcode.sandbox.sandbox import Sandbox
-from gptcode.sandbox.schema import (SandboxFile, SandboxRunOutput,
-                                    SandboxRunConfig, SandboxResponse)
-from gptcode.utils.error import SandboxRunMaxRetryError
+from gptcode.sandbox.schema import SandboxFile, SandboxRunOutput, SandboxResponse
 from gptcode.utils.log import gptcode_log
 
 
@@ -42,9 +40,7 @@ class LocalJupyterSandbox(Sandbox):
         ws = await ws_connect(ws_url)
         return cls(id=id, ws_url=ws_url, ws=ws, workdir=workdir)
 
-    def run(
-        self, code: Union[str, os.PathLike]
-    ) -> SandboxRunOutput:
+    def run(self, code: Union[str, os.PathLike]) -> SandboxRunOutput:
         if not code:
             raise ValueError("Code or Code file path must be specified one.")
         if type(code) is os.PathLike:
@@ -80,7 +76,9 @@ class LocalJupyterSandbox(Sandbox):
             except ConnectionClosedError:
                 gptcode_log.warning("reconnect websocket...")
                 self.reconnect()
-                return SandboxRunOutput(type="error", content="websocket closed,please try again")
+                return SandboxRunOutput(
+                    type="error", content="websocket closed,please try again"
+                )
             if (
                 received_msg["header"]["msg_type"] == "stream"
                 and received_msg["parent_header"]["msg_id"] == msg_id
@@ -129,9 +127,7 @@ class LocalJupyterSandbox(Sandbox):
                 gptcode_log.debug("Received [error], return the error %s" % error)
                 return SandboxRunOutput(type="error", content=error)
 
-    async def arun(
-        self, code: Union[str, os.PathLike]
-    ) -> SandboxRunOutput:
+    async def arun(self, code: Union[str, os.PathLike]) -> SandboxRunOutput:
         if not code:
             raise ValueError("Code or Code file path must be specified one.")
         if type(code) is os.PathLike:
@@ -167,7 +163,9 @@ class LocalJupyterSandbox(Sandbox):
             except ConnectionClosedError:
                 gptcode_log.warning("reconnect websocket...")
                 await self.areconnect()
-                return SandboxRunOutput(type="error", content="websocket closed,please try again")
+                return SandboxRunOutput(
+                    type="error", content="websocket closed,please try again"
+                )
             if (
                 received_msg["header"]["msg_type"] == "stream"
                 and received_msg["parent_header"]["msg_id"] == msg_id
@@ -235,13 +233,14 @@ class LocalJupyterSandbox(Sandbox):
     async def adownload(self, file_name: str) -> SandboxFile:
         return await asyncio.to_thread(self.download, file_name)
 
-    def close_websocket(self)->None:
+    def close_websocket(self) -> None:
         self.ws.close()
-    
-    async def aclose_websocket(self)->None:
+
+    async def aclose_websocket(self) -> None:
         await self.ws.close()
-        
+
     def reconnect(self) -> None:
         self.ws = ws_sync_connect(self.ws_url)
+
     async def areconnect(self) -> None:
         self.ws = await ws_connect(self.ws_url)
