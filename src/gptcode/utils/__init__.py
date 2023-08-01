@@ -20,4 +20,4 @@ def import_openai():
 
 
 def import_jupyter_kernel_gateway():
-    _check_library("jupyter_kernel_gateway")
+    _check_library("jupyter-kernel-gateway")
