@@ -76,7 +76,6 @@ class LocalJupyterManager(SandboxManager):
     async def ainit(self) -> None:
         self.session = aiohttp.ClientSession()
 
-        out = subprocess.PIPE
         workdir = os.path.abspath(self.workdir)
         os.makedirs(workdir, exist_ok=True)
         gptcode_log.debug("Starting kernelgateway...")

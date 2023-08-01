@@ -233,7 +233,7 @@ class LocalJupyterSandbox(Sandbox):
         return await asyncio.to_thread(self.upload, file_name, content)
 
     def download(self, file_name: str) -> SandboxFile:
-        with open(os.path.join(".codebox", file_name), "rb") as file:
+        with open(os.path.join(self.workdir, file_name), "rb") as file:
             content = file.read()
 
         return SandboxFile(name=file_name, content=content)

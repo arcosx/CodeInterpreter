@@ -3,7 +3,6 @@ import os
 import shutil
 
 import psutil
-import pytest
 
 from gptcode.sandbox.local_jupyter.manager import LocalJupyterManager
 from gptcode.sandbox.schema import SandboxRunConfig
@@ -112,21 +111,51 @@ def test_sandbox_arun():
     shutil.rmtree(".sandbox")
 
 
-def test_sandbox_upload():
+def test_sandbox_upload_download():
     test_file = tempfile.NamedTemporaryFile(delete=False)
     test_file.write(b"test_content")
     test_file.close()
-
+    with open(test_file.name, "rb") as f:
+        content = f.read()
+        
     manager = LocalJupyterManager()
     manager.init()
     sandbox = manager.start()
-    with open(test_file.name, "rb") as f:
-        content = f.read()
 
     response = sandbox.upload(Path(test_file.name).name, content)
     assert response.status == f"{Path(test_file.name).name} uploaded successfully"
 
     with open(os.path.join(sandbox.workdir, Path(test_file.name).name), "rb") as file:
         assert file.read() == content
+    
+    downloaded_file = sandbox.download(Path(test_file.name).name)
+    assert downloaded_file.name == Path(test_file.name).name
+    assert downloaded_file.content == content
+    
     manager.stop()
+    shutil.rmtree(".sandbox")
+
+def test_sandbox_aupload_adownload():
+    test_file = tempfile.NamedTemporaryFile(delete=False)
+    test_file.write(b"test_content")
+    test_file.close()
+    with open(test_file.name, "rb") as f:
+        content = f.read()
+        
+    manager = LocalJupyterManager()
+    async def run_aupload():
+        await manager.ainit()
+        sandbox = await manager.astart()
+        response = await sandbox.aupload(Path(test_file.name).name, content)
+        assert response.status == f"{Path(test_file.name).name} uploaded successfully"
+        with open(os.path.join(sandbox.workdir, Path(test_file.name).name), "rb") as file:
+            assert file.read() == content
+
+        downloaded_file = await sandbox.adownload(Path(test_file.name).name)
+        assert downloaded_file.name == Path(test_file.name).name
+        assert downloaded_file.content == content
+        
+        await manager.astop()
+
+    asyncio.run(run_aupload())
     shutil.rmtree(".sandbox")
