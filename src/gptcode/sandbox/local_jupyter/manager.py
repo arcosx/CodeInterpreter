@@ -1,17 +1,18 @@
 import asyncio
 import os
+import shutil
 import signal
 import subprocess
 import time
 from asyncio.subprocess import Process
-from typing import List, Union
+from typing import Dict, List, Union
 
 import aiohttp
 import requests
 
 from gptcode.sandbox.local_jupyter.sandbox import LocalJupyterSandbox
 from gptcode.sandbox.manager import SandboxManager
-from gptcode.sandbox.schema import SandboxStatus
+from gptcode.sandbox.schema import SandboxResponse
 from gptcode.utils import import_jupyter_kernel_gateway
 from gptcode.utils.log import gptcode_log
 
@@ -25,6 +26,7 @@ class LocalJupyterManager(SandboxManager):
         self.subprocess: Union[Process, subprocess.Popen, None] = None
         self.workdir = workdir
         self.port = port
+        self.sandboxs:Dict[str,LocalJupyterSandbox] = {}
 
     def init(self) -> None:
         self.session = requests.Session()
@@ -120,19 +122,23 @@ class LocalJupyterManager(SandboxManager):
         gptcode_log.debug("kernelgateway start success!")
 
     def list(self) -> List[LocalJupyterSandbox]:
-        ...
-
+        return list(self.sandboxs.values())
+        
     async def alist(self) -> List[LocalJupyterSandbox]:
-        ...
+        return list(self.sandboxs.values())
 
     def start(self) -> LocalJupyterSandbox:
         response = self.session.post(f"{self.base_http_url}/kernels", json={})
         kernel_id = response.json()["id"]
         ws_url = f"{self.base_websocket_url}/kernels/{kernel_id}/channels"
 
-        return LocalJupyterSandbox.sync_init(
+        sandbox = LocalJupyterSandbox.sync_init(
             id=kernel_id, ws_url=ws_url, workdir=f"{self.workdir}/{kernel_id}"
         )
+        
+        self.sandboxs[kernel_id] = sandbox
+        
+        return sandbox
 
     async def astart(self) -> LocalJupyterSandbox:
         response = await self.session.post(f"{self.base_http_url}/kernels", json={})
@@ -140,35 +146,56 @@ class LocalJupyterManager(SandboxManager):
         kernel_id = data["id"]
         ws_url = f"{self.base_websocket_url}/kernels/{kernel_id}/channels"
 
-        return await LocalJupyterSandbox.async_init(
-            id=kernel_id, ws_url=ws_url, workdir=f"{self.workdir}/{kernel_id}"
-        )
+        sandbox = await LocalJupyterSandbox.async_init(
+                    id=kernel_id, ws_url=ws_url, workdir=f"{self.workdir}/{kernel_id}"
+                )
+        
+        self.sandboxs[kernel_id] = sandbox
+        
+        return sandbox
 
     def get(self, id: str | None) -> LocalJupyterSandbox:
-        ...
+        return self.sandboxs[id]
 
     async def aget(self, id: str | None) -> LocalJupyterSandbox:
-        ...
+        return self.sandboxs[id]
 
-    def status(self, id: str) -> SandboxStatus:
-        ...
 
-    async def astatus(self, id: str) -> SandboxStatus:
-        ...
-
-    def restart(self, id: str) -> SandboxStatus:
-        ...
-
-    async def arestart(self, id: str) -> SandboxStatus:
-        ...
+    def restart(self, id: str) -> SandboxResponse:
+        gptcode_log.debug("restart kernel %s",id)
+        response = self.session.post(f"{self.base_http_url}/kernels/{id}/restart", json={})
+        if response.status_code == 200:
+            self.sandboxs[id].reconnect()
+            return SandboxResponse(content="success")
+        else:
+            return SandboxResponse(content="restart failed")
+        
+    async def arestart(self, id: str) -> SandboxResponse:
+        gptcode_log.debug("restart kernel %s",id)
+        response = await self.session.post(f"{self.base_http_url}/kernels/{id}/restart", json={})
+        if response.status_code == 200:
+            await self.sandboxs[id].areconnect()
+            return SandboxResponse(content="success")
+        else:
+            return SandboxResponse(content="restart failed")
 
     def delete(self, id: str):
-        ...
+        gptcode_log.debug("delete kernel %s",id)
+        self.sandboxs[id].close_websocket()
+        response = self.session.delete(f"{self.base_http_url}/kernels/{id}", json={})
+        if response.status_code == 200:
+            self.sandboxs.pop(id)
+            return SandboxResponse(content="success")
 
     async def adelete(self, id: str):
-        ...
-
-    def stop(self) -> SandboxStatus:
+        gptcode_log.debug("delete kernel %s",id)
+        await self.sandboxs[id].aclose_websocket()
+        response = await self.session.delete(f"{self.base_http_url}/kernels/{id}", json={})
+        if response.status_code == 200:
+            self.sandboxs.pop(id)
+            return SandboxResponse(content="success")
+        
+    def stop(self) -> SandboxResponse:
         gptcode_log.debug("Begin stop sandbox manager")
         if self.subprocess is not None:
             self.subprocess.send_signal(signal.SIGINT)
@@ -181,8 +208,9 @@ class LocalJupyterManager(SandboxManager):
         if self.session is not None:
             self.session.close()
             self.session = None
+        shutil.rmtree(self.workdir, ignore_errors=True, onerror=None)
 
-    async def astop(self) -> SandboxStatus:
+    async def astop(self) -> SandboxResponse:
         gptcode_log.debug("Begin stop sandbox manager")
         if self.subprocess is not None:
             self.subprocess.send_signal(signal.SIGINT)
@@ -196,7 +224,8 @@ class LocalJupyterManager(SandboxManager):
         if self.session is not None:
             await self.session.close()
             self.session = None
-
+        shutil.rmtree(self.workdir, ignore_errors=True, onerror=None)
+        
     @property
     def base_http_url(self) -> str:
         return f"http://0.0.0.0:{self.port}/api"

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from gptcode.sandbox.sandbox import Sandbox
-from gptcode.sandbox.schema import SandboxStatus
+from gptcode.sandbox.schema import SandboxResponse
 
 
 class SandboxManager(ABC):
@@ -15,11 +15,11 @@ class SandboxManager(ABC):
         ...
 
     @abstractmethod
-    def list(self) -> Sandbox:
+    def list(self) -> SandboxResponse:
         ...
 
     @abstractmethod
-    async def alist(self) -> List[Sandbox]:
+    async def alist(self) -> List[SandboxResponse]:
         ...
 
     @abstractmethod
@@ -37,21 +37,13 @@ class SandboxManager(ABC):
     @abstractmethod
     async def aget(self, id: str | None) -> Sandbox:
         ...
-
+        
     @abstractmethod
-    def status(self, id: str) -> SandboxStatus:
+    def restart(self, id: str) -> SandboxResponse:
         ...
 
     @abstractmethod
-    async def astatus(self, id: str) -> SandboxStatus:
-        ...
-
-    @abstractmethod
-    def restart(self, id: str) -> SandboxStatus:
-        ...
-
-    @abstractmethod
-    async def arestart(self, id: str) -> SandboxStatus:
+    async def arestart(self, id: str) -> SandboxResponse:
         ...
 
     @abstractmethod

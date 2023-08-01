@@ -23,22 +23,20 @@ def test_manager_init():
     assert os.path.exists(".sandbox/jupyter-kernelgateway.log")
     manager.stop()
 
-    shutil.rmtree(".sandbox")
 
 
-def test_manager_alist():
+
+def test_manager_ainit():
     manager = LocalJupyterManager()
 
     async def run_ainit():
         await manager.ainit()
         assert os.path.exists(".sandbox")
         assert manager.subprocess is not None
-        await manager.astop()
         assert os.path.exists(".sandbox/jupyter-kernelgateway.log")
+        await manager.astop()
 
     asyncio.run(run_ainit())
-
-    shutil.rmtree(".sandbox")
 
 
 def test_sandbox_start():
@@ -46,9 +44,8 @@ def test_sandbox_start():
     manager.init()
     sandbox = manager.start()
     sandbox.ws.recv()
-    sandbox.ws.close()
+    sandbox.close_websocket()
     manager.stop()
-    shutil.rmtree(".sandbox")
 
 
 def test_sandbox_astart():
@@ -58,11 +55,11 @@ def test_sandbox_astart():
         await manager.ainit()
         sandbox = await manager.astart()
         await sandbox.ws.recv()
-        await sandbox.ws.close()
+        await sandbox.aclose_websocket()
         await manager.astop()
 
     asyncio.run(run_astart())
-    shutil.rmtree(".sandbox")
+
 
 
 def test_sandbox_run():
@@ -81,9 +78,9 @@ def test_sandbox_run():
     assert sandbox_output.content == "to the world"
     assert sandbox_output.type == "text"
 
-    sandbox.ws.close()
+    sandbox.close_websocket()
     manager.stop()
-    shutil.rmtree(".sandbox")
+
 
 
 def test_sandbox_arun():
@@ -104,11 +101,11 @@ def test_sandbox_arun():
         assert sandbox_output.content == "to the world"
         assert sandbox_output.type == "text"
 
-        await sandbox.ws.close()
+        await sandbox.aclose_websocket()
         await manager.astop()
 
     asyncio.run(run_arun())
-    shutil.rmtree(".sandbox")
+
 
 
 def test_sandbox_upload_download():
@@ -123,7 +120,7 @@ def test_sandbox_upload_download():
     sandbox = manager.start()
 
     response = sandbox.upload(Path(test_file.name).name, content)
-    assert response.status == f"{Path(test_file.name).name} uploaded successfully"
+    assert response.content == f"{Path(test_file.name).name} uploaded successfully"
 
     with open(os.path.join(sandbox.workdir, Path(test_file.name).name), "rb") as file:
         assert file.read() == content
@@ -133,7 +130,7 @@ def test_sandbox_upload_download():
     assert downloaded_file.content == content
     
     manager.stop()
-    shutil.rmtree(".sandbox")
+
 
 def test_sandbox_aupload_adownload():
     test_file = tempfile.NamedTemporaryFile(delete=False)
@@ -147,7 +144,7 @@ def test_sandbox_aupload_adownload():
         await manager.ainit()
         sandbox = await manager.astart()
         response = await sandbox.aupload(Path(test_file.name).name, content)
-        assert response.status == f"{Path(test_file.name).name} uploaded successfully"
+        assert response.content == f"{Path(test_file.name).name} uploaded successfully"
         with open(os.path.join(sandbox.workdir, Path(test_file.name).name), "rb") as file:
             assert file.read() == content
 
@@ -158,4 +155,3 @@ def test_sandbox_aupload_adownload():
         await manager.astop()
 
     asyncio.run(run_aupload())
-    shutil.rmtree(".sandbox")

@@ -11,8 +11,8 @@ from websockets.sync.client import ClientConnection
 from websockets.sync.client import connect as ws_sync_connect
 
 from gptcode.sandbox.sandbox import Sandbox
-from gptcode.sandbox.schema import (SandboxFile, SandboxOutput,
-                                    SandboxRunConfig, SandboxStatus)
+from gptcode.sandbox.schema import (SandboxFile, SandboxRunOutput,
+                                    SandboxRunConfig, SandboxResponse)
 from gptcode.utils.error import SandboxRunMaxRetryError
 from gptcode.utils.log import gptcode_log
 
@@ -44,7 +44,7 @@ class LocalJupyterSandbox(Sandbox):
 
     def run(
         self, code: Union[str, os.PathLike], config: SandboxRunConfig
-    ) -> SandboxOutput:
+    ) -> SandboxRunOutput:
         if not code:
             raise ValueError("Code or Code file path must be specified one.")
         if type(code) is os.PathLike:
@@ -81,7 +81,7 @@ class LocalJupyterSandbox(Sandbox):
                 received_msg = json.loads(self.ws.recv())
             except ConnectionClosedError:
                 gptcode_log.warning("reconnect websocket...")
-                self.ws = ws_sync_connect(self.ws_url)
+                self.reconnect()
                 config.retry = config.retry - 1
                 return self.run(code=code, config=config)
             if (
@@ -101,14 +101,14 @@ class LocalJupyterSandbox(Sandbox):
             elif received_msg["header"]["msg_type"] == "display_data":
                 if "image/png" in received_msg["content"]["data"]:
                     gptcode_log.debug("Received [display_data] image/png output")
-                    return SandboxOutput(
+                    return SandboxRunOutput(
                         type="image/png",
                         content=received_msg["content"]["data"]["image/png"],
                     )
 
                 elif "text/plain" in received_msg["content"]["data"]:
                     gptcode_log.debug("Received [display_data] text/plain output")
-                    return SandboxOutput(
+                    return SandboxRunOutput(
                         type="text",
                         content=received_msg["content"]["data"]["text/plain"],
                     )
@@ -120,7 +120,7 @@ class LocalJupyterSandbox(Sandbox):
                 gptcode_log.debug(
                     "Received [status] idle, return the result %s" % result
                 )
-                return SandboxOutput(
+                return SandboxRunOutput(
                     type="text", content=result or "code run successfully (no output)"
                 )
 
@@ -130,11 +130,11 @@ class LocalJupyterSandbox(Sandbox):
             ):
                 error = f"{received_msg['content']['ename']}: {received_msg['content']['evalue']}"
                 gptcode_log.debug("Received [error], return the error %s" % error)
-                return SandboxOutput(type="error", content=error)
+                return SandboxRunOutput(type="error", content=error)
 
     async def arun(
         self, code: Union[str, os.PathLike], config: SandboxRunConfig
-    ) -> SandboxOutput:
+    ) -> SandboxRunOutput:
         if not code:
             raise ValueError("Code or Code file path must be specified one.")
         if type(code) is os.PathLike:
@@ -171,7 +171,7 @@ class LocalJupyterSandbox(Sandbox):
                 received_msg = json.loads(await self.ws.recv())
             except ConnectionClosedError:
                 gptcode_log.warning("reconnect websocket...")
-                self.ws = await ws_connect(self.ws_url)
+                await self.areconnect()
                 config.retry = config.retry - 1
                 return await self.arun(code=code, config=config)
             if (
@@ -191,14 +191,14 @@ class LocalJupyterSandbox(Sandbox):
             elif received_msg["header"]["msg_type"] == "display_data":
                 if "image/png" in received_msg["content"]["data"]:
                     gptcode_log.debug("Received [display_data] image/png output")
-                    return SandboxOutput(
+                    return SandboxRunOutput(
                         type="image/png",
                         content=received_msg["content"]["data"]["image/png"],
                     )
 
                 elif "text/plain" in received_msg["content"]["data"]:
                     gptcode_log.debug("Received [display_data] text/plain output")
-                    return SandboxOutput(
+                    return SandboxRunOutput(
                         type="text",
                         content=received_msg["content"]["data"]["text/plain"],
                     )
@@ -210,7 +210,7 @@ class LocalJupyterSandbox(Sandbox):
                 gptcode_log.debug(
                     "Received [status] idle, return the result %s", result
                 )
-                return SandboxOutput(
+                return SandboxRunOutput(
                     type="text", content=result or "code run successfully (no output)"
                 )
 
@@ -220,16 +220,16 @@ class LocalJupyterSandbox(Sandbox):
             ):
                 error = f"{received_msg['content']['ename']}: {received_msg['content']['evalue']}"
                 gptcode_log.debug("Received [error], return the error %s", error)
-                return SandboxOutput(type="error", content=error)
+                return SandboxRunOutput(type="error", content=error)
 
-    def upload(self, file_name: str, content: bytes) -> SandboxStatus:
+    def upload(self, file_name: str, content: bytes) -> SandboxResponse:
         os.makedirs(self.workdir, exist_ok=True)
         with open(os.path.join(self.workdir, file_name), "wb") as file:
             file.write(content)
 
-        return SandboxStatus(status=f"{file_name} uploaded successfully")
+        return SandboxResponse(content=f"{file_name} uploaded successfully")
 
-    async def aupload(self, file_name: str, content: bytes) -> SandboxStatus:
+    async def aupload(self, file_name: str, content: bytes) -> SandboxResponse:
         return await asyncio.to_thread(self.upload, file_name, content)
 
     def download(self, file_name: str) -> SandboxFile:
@@ -240,3 +240,14 @@ class LocalJupyterSandbox(Sandbox):
 
     async def adownload(self, file_name: str) -> SandboxFile:
         return await asyncio.to_thread(self.download, file_name)
+
+    def close_websocket(self)->None:
+        self.ws.close()
+    
+    async def aclose_websocket(self)->None:
+        await self.ws.close()
+        
+    def reconnect(self) -> None:
+        self.ws = ws_sync_connect(self.ws_url)
+    async def areconnect(self) -> None:
+        self.ws = await ws_connect(self.ws_url)

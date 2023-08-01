@@ -3,11 +3,11 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class SandboxStatus(BaseModel):
-    status: str
+class SandboxResponse(BaseModel):
+    content: str
 
 
-class SandboxOutput(BaseModel):
+class SandboxRunOutput(BaseModel):
     type: str
     content: str
 

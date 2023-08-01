@@ -2,8 +2,8 @@ import os
 from abc import ABC, abstractmethod
 from typing import Union
 
-from gptcode.sandbox.schema import (SandboxFile, SandboxOutput,
-                                    SandboxRunConfig, SandboxStatus)
+from gptcode.sandbox.schema import (SandboxFile, SandboxRunOutput,
+                                    SandboxRunConfig, SandboxResponse)
 
 
 class Sandbox(ABC):
@@ -12,21 +12,21 @@ class Sandbox(ABC):
     @abstractmethod
     def run(
         self, code: Union[str, os.PathLike], config: SandboxRunConfig
-    ) -> SandboxOutput:
+    ) -> SandboxRunOutput:
         ...
 
     @abstractmethod
     async def arun(
         self, code: Union[str, os.PathLike], config: SandboxRunConfig
-    ) -> SandboxOutput:
+    ) -> SandboxRunOutput:
         ...
 
     @abstractmethod
-    def upload(self, file_name: str, content: bytes) -> SandboxStatus:
+    def upload(self, file_name: str, content: bytes) -> SandboxResponse:
         ...
 
     @abstractmethod
-    async def aupload(self, file_name: str, content: bytes) -> SandboxStatus:
+    async def aupload(self, file_name: str, content: bytes) -> SandboxResponse:
         ...
 
     @abstractmethod
