@@ -31,13 +31,13 @@ class SandboxManager(ABC):
         ...
 
     @abstractmethod
-    def get(self, id: str | None) -> Sandbox:
+    def get(self, id: str) -> Sandbox:
         ...
 
     @abstractmethod
-    async def aget(self, id: str | None) -> Sandbox:
+    async def aget(self, id: str) -> Sandbox:
         ...
-        
+
     @abstractmethod
     def restart(self, id: str) -> SandboxResponse:
         ...
