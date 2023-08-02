@@ -24,7 +24,7 @@ def main():
         print(int(add_result.content) * int(mul_result.content))
         
     finally:
-        # manager.stop()
+        manager.stop()
         pass
     
 if __name__ == "__main__":
