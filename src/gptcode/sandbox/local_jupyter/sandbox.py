@@ -43,15 +43,13 @@ class LocalJupyterSandbox(Sandbox):
         return cls(id=id, ws_url=ws_url, ws=ws, workdir=workdir)
 
     def run(
-        self, code: Union[str, os.PathLike], config: SandboxRunConfig
+        self, code: Union[str, os.PathLike]
     ) -> SandboxRunOutput:
         if not code:
             raise ValueError("Code or Code file path must be specified one.")
         if type(code) is os.PathLike:
             with open(code, "r") as f:
                 code = f.read()
-        if config.retry <= 0:
-            raise SandboxRunMaxRetryError()
         gptcode_log.debug(f"Running code:{code}")
         self.ws.send(
             json.dumps(
@@ -82,8 +80,7 @@ class LocalJupyterSandbox(Sandbox):
             except ConnectionClosedError:
                 gptcode_log.warning("reconnect websocket...")
                 self.reconnect()
-                config.retry = config.retry - 1
-                return self.run(code=code, config=config)
+                return SandboxRunOutput(type="error", content="websocket closed,please try again")
             if (
                 received_msg["header"]["msg_type"] == "stream"
                 and received_msg["parent_header"]["msg_id"] == msg_id
@@ -133,15 +130,13 @@ class LocalJupyterSandbox(Sandbox):
                 return SandboxRunOutput(type="error", content=error)
 
     async def arun(
-        self, code: Union[str, os.PathLike], config: SandboxRunConfig
+        self, code: Union[str, os.PathLike]
     ) -> SandboxRunOutput:
         if not code:
             raise ValueError("Code or Code file path must be specified one.")
         if type(code) is os.PathLike:
             with open(code, "r") as f:
                 code = await f.read()
-        if config.retry <= 0:
-            raise SandboxRunMaxRetryError()
         gptcode_log.debug(f"Running code:{code}")
         await self.ws.send(
             json.dumps(
@@ -172,8 +167,7 @@ class LocalJupyterSandbox(Sandbox):
             except ConnectionClosedError:
                 gptcode_log.warning("reconnect websocket...")
                 await self.areconnect()
-                config.retry = config.retry - 1
-                return await self.arun(code=code, config=config)
+                return SandboxRunOutput(type="error", content="websocket closed,please try again")
             if (
                 received_msg["header"]["msg_type"] == "stream"
                 and received_msg["parent_header"]["msg_id"] == msg_id

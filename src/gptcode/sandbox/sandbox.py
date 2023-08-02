@@ -11,13 +11,13 @@ class Sandbox(ABC):
 
     @abstractmethod
     def run(
-        self, code: Union[str, os.PathLike], config: SandboxRunConfig
+        self, code: Union[str, os.PathLike]
     ) -> SandboxRunOutput:
         ...
 
     @abstractmethod
     async def arun(
-        self, code: Union[str, os.PathLike], config: SandboxRunConfig
+        self, code: Union[str, os.PathLike]
     ) -> SandboxRunOutput:
         ...
 

@@ -13,10 +13,7 @@ import requests
 from gptcode.sandbox.local_jupyter.sandbox import LocalJupyterSandbox
 from gptcode.sandbox.manager import SandboxManager
 from gptcode.sandbox.schema import SandboxResponse
-from gptcode.utils import import_jupyter_kernel_gateway
 from gptcode.utils.log import gptcode_log
-
-import_jupyter_kernel_gateway()
 
 
 class LocalJupyterManager(SandboxManager):
@@ -50,6 +47,7 @@ class LocalJupyterManager(SandboxManager):
                     "--JupyterWebsocketPersonality.list_kernels=true",
                     "--KernelGatewayApp.log_level=DEBUG",
                     "--JupyterWebsocketPersonality.env_whitelist JUPYTER_DATA_DIR",
+                    "--KernelGatewayApp.kernel_manager_class=notebook.services.kernels.kernelmanager.AsyncMappingKernelManager",
                 ],
                 stdout=subprocess_log_file,
                 stderr=subprocess_log_file,
@@ -67,13 +65,14 @@ class LocalJupyterManager(SandboxManager):
             try:
                 response = self.session.get(self.base_http_url)
                 if response.status_code == 200:
+                    gptcode_log.debug("kernelgateway start success!")
                     break
             except requests.exceptions.ConnectionError:
                 pass
             gptcode_log.debug("Waiting for kernelgateway to start...")
             time.sleep(1)
 
-        gptcode_log.debug("kernelgateway start success!")
+       
 
     async def ainit(self) -> None:
         self.session = aiohttp.ClientSession()
@@ -96,6 +95,7 @@ class LocalJupyterManager(SandboxManager):
                 "--JupyterWebsocketPersonality.list_kernels=true",
                 "--KernelGatewayApp.log_level=DEBUG",
                 "--JupyterWebsocketPersonality.env_whitelist JUPYTER_DATA_DIR",
+                "--KernelGatewayApp.kernel_manager_class=notebook.services.kernels.kernelmanager.AsyncMappingKernelManager",
                 stdout=subprocess_log_file,
                 stderr=subprocess_log_file,
                 cwd=workdir,
@@ -183,7 +183,7 @@ class LocalJupyterManager(SandboxManager):
         gptcode_log.debug("delete kernel %s",id)
         self.sandboxs[id].close_websocket()
         response = self.session.delete(f"{self.base_http_url}/kernels/{id}", json={})
-        if response.status_code == 200:
+        if response.status_code <= 400:
             self.sandboxs.pop(id)
             return SandboxResponse(content="success")
 
@@ -191,12 +191,14 @@ class LocalJupyterManager(SandboxManager):
         gptcode_log.debug("delete kernel %s",id)
         await self.sandboxs[id].aclose_websocket()
         response = await self.session.delete(f"{self.base_http_url}/kernels/{id}", json={})
-        if response.status_code == 200:
+        if response.status <= 400:
             self.sandboxs.pop(id)
             return SandboxResponse(content="success")
         
     def stop(self) -> SandboxResponse:
         gptcode_log.debug("Begin stop sandbox manager")
+        for sandbox_id in list(self.sandboxs.keys()):
+            self.delete(sandbox_id)
         if self.subprocess is not None:
             self.subprocess.send_signal(signal.SIGINT)
             try:
@@ -209,9 +211,12 @@ class LocalJupyterManager(SandboxManager):
             self.session.close()
             self.session = None
         shutil.rmtree(self.workdir, ignore_errors=True, onerror=None)
-
+        gptcode_log.debug("sandbox manager stoped")
+        
     async def astop(self) -> SandboxResponse:
         gptcode_log.debug("Begin stop sandbox manager")
+        if self.sandboxs:
+            await asyncio.gather(*(self.adelete(id) for id in list(self.sandboxs.keys())))
         if self.subprocess is not None:
             self.subprocess.send_signal(signal.SIGINT)
             try:
@@ -225,6 +230,7 @@ class LocalJupyterManager(SandboxManager):
             await self.session.close()
             self.session = None
         shutil.rmtree(self.workdir, ignore_errors=True, onerror=None)
+        gptcode_log.debug("sandbox manager stoped")
         
     @property
     def base_http_url(self) -> str:
