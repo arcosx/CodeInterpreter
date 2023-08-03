@@ -3,7 +3,7 @@ __all__ = ["import_openai", "import_jupyter_kernel_gateway"]
 import importlib.util
 from typing import Optional
 
-from gptcode.utils.dependency import pip_install
+from codeinterpreter.utils.dependency import pip_install
 
 
 def _check_library(libname: str, prompt: bool = True, package: Optional[str] = None):

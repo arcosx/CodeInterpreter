@@ -2,7 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import Union
 
-from gptcode.sandbox.schema import (SandboxFile, SandboxRunOutput,
+from codeinterpreter.sandbox.schema import (SandboxFile, SandboxRunOutput,
                                     SandboxResponse)
 
 

@@ -10,9 +10,9 @@ from websockets.exceptions import ConnectionClosedError
 from websockets.sync.client import ClientConnection
 from websockets.sync.client import connect as ws_sync_connect
 
-from gptcode.sandbox.sandbox import Sandbox
-from gptcode.sandbox.schema import SandboxFile, SandboxRunOutput, SandboxResponse
-from gptcode.utils.log import gptcode_log
+from codeinterpreter.sandbox.sandbox import Sandbox
+from codeinterpreter.sandbox.schema import SandboxFile, SandboxRunOutput, SandboxResponse
+from codeinterpreter.utils.log import codeinterpreter_log
 
 
 class LocalJupyterSandbox(Sandbox):
@@ -46,7 +46,7 @@ class LocalJupyterSandbox(Sandbox):
         if type(code) is os.PathLike:
             with open(code, "r") as f:
                 code = f.read()
-        gptcode_log.debug(f"Running code:{code}")
+        codeinterpreter_log.debug(f"Running code:{code}")
         self.ws.send(
             json.dumps(
                 {
@@ -74,7 +74,7 @@ class LocalJupyterSandbox(Sandbox):
             try:
                 received_msg = json.loads(self.ws.recv())
             except ConnectionClosedError:
-                gptcode_log.warning("reconnect websocket...")
+                codeinterpreter_log.warning("reconnect websocket...")
                 self.reconnect()
                 return SandboxRunOutput(
                     type="error", content="websocket closed,please try again"
@@ -84,25 +84,25 @@ class LocalJupyterSandbox(Sandbox):
                 and received_msg["parent_header"]["msg_id"] == msg_id
             ):
                 msg = received_msg["content"]["text"].strip()
-                gptcode_log.debug("Received [stream] %s" % msg)
+                codeinterpreter_log.debug("Received [stream] %s" % msg)
                 result += msg
             elif (
                 received_msg["header"]["msg_type"] == "execute_result"
                 and received_msg["parent_header"]["msg_id"] == msg_id
             ):
                 msg = received_msg["content"]["data"]["text/plain"].strip()
-                gptcode_log.debug("Received [execute_result] output %s" % msg)
+                codeinterpreter_log.debug("Received [execute_result] output %s" % msg)
                 result += msg
             elif received_msg["header"]["msg_type"] == "display_data":
                 if "image/png" in received_msg["content"]["data"]:
-                    gptcode_log.debug("Received [display_data] image/png output")
+                    codeinterpreter_log.debug("Received [display_data] image/png output")
                     return SandboxRunOutput(
                         type="image/png",
                         content=received_msg["content"]["data"]["image/png"],
                     )
 
                 elif "text/plain" in received_msg["content"]["data"]:
-                    gptcode_log.debug("Received [display_data] text/plain output")
+                    codeinterpreter_log.debug("Received [display_data] text/plain output")
                     return SandboxRunOutput(
                         type="text",
                         content=received_msg["content"]["data"]["text/plain"],
@@ -112,7 +112,7 @@ class LocalJupyterSandbox(Sandbox):
                 and received_msg["parent_header"]["msg_id"] == msg_id
                 and received_msg["content"]["execution_state"] == "idle"
             ):
-                gptcode_log.debug(
+                codeinterpreter_log.debug(
                     "Received [status] idle, return the result %s" % result
                 )
                 return SandboxRunOutput(
@@ -124,7 +124,7 @@ class LocalJupyterSandbox(Sandbox):
                 and received_msg["parent_header"]["msg_id"] == msg_id
             ):
                 error = f"{received_msg['content']['ename']}: {received_msg['content']['evalue']}"
-                gptcode_log.debug("Received [error], return the error %s" % error)
+                codeinterpreter_log.debug("Received [error], return the error %s" % error)
                 return SandboxRunOutput(type="error", content=error)
 
     async def arun(self, code: Union[str, os.PathLike]) -> SandboxRunOutput:
@@ -133,7 +133,7 @@ class LocalJupyterSandbox(Sandbox):
         if type(code) is os.PathLike:
             with open(code, "r") as f:
                 code = await f.read()
-        gptcode_log.debug(f"Running code:{code}")
+        codeinterpreter_log.debug(f"Running code:{code}")
         await self.ws.send(
             json.dumps(
                 {
@@ -161,7 +161,7 @@ class LocalJupyterSandbox(Sandbox):
             try:
                 received_msg = json.loads(await self.ws.recv())
             except ConnectionClosedError:
-                gptcode_log.warning("reconnect websocket...")
+                codeinterpreter_log.warning("reconnect websocket...")
                 await self.areconnect()
                 return SandboxRunOutput(
                     type="error", content="websocket closed,please try again"
@@ -171,25 +171,25 @@ class LocalJupyterSandbox(Sandbox):
                 and received_msg["parent_header"]["msg_id"] == msg_id
             ):
                 msg = received_msg["content"]["text"].strip()
-                gptcode_log.debug("Received [stream] %s", msg)
+                codeinterpreter_log.debug("Received [stream] %s", msg)
                 result += msg
             elif (
                 received_msg["header"]["msg_type"] == "execute_result"
                 and received_msg["parent_header"]["msg_id"] == msg_id
             ):
                 msg = received_msg["content"]["data"]["text/plain"].strip()
-                gptcode_log.debug("Received [execute_result] output %s", msg)
+                codeinterpreter_log.debug("Received [execute_result] output %s", msg)
                 result += msg
             elif received_msg["header"]["msg_type"] == "display_data":
                 if "image/png" in received_msg["content"]["data"]:
-                    gptcode_log.debug("Received [display_data] image/png output")
+                    codeinterpreter_log.debug("Received [display_data] image/png output")
                     return SandboxRunOutput(
                         type="image/png",
                         content=received_msg["content"]["data"]["image/png"],
                     )
 
                 elif "text/plain" in received_msg["content"]["data"]:
-                    gptcode_log.debug("Received [display_data] text/plain output")
+                    codeinterpreter_log.debug("Received [display_data] text/plain output")
                     return SandboxRunOutput(
                         type="text",
                         content=received_msg["content"]["data"]["text/plain"],
@@ -199,7 +199,7 @@ class LocalJupyterSandbox(Sandbox):
                 and received_msg["parent_header"]["msg_id"] == msg_id
                 and received_msg["content"]["execution_state"] == "idle"
             ):
-                gptcode_log.debug(
+                codeinterpreter_log.debug(
                     "Received [status] idle, return the result %s", result
                 )
                 return SandboxRunOutput(
@@ -211,7 +211,7 @@ class LocalJupyterSandbox(Sandbox):
                 and received_msg["parent_header"]["msg_id"] == msg_id
             ):
                 error = f"{received_msg['content']['ename']}: {received_msg['content']['evalue']}"
-                gptcode_log.debug("Received [error], return the error %s", error)
+                codeinterpreter_log.debug("Received [error], return the error %s", error)
                 return SandboxRunOutput(type="error", content=error)
 
     def upload(self, file_name: str, content: bytes) -> SandboxResponse:

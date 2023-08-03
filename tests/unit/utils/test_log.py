@@ -1,9 +1,9 @@
-from gptcode.utils.log import gptcode_log
+from codeinterpreter.utils.log import codeinterpreter_log
 
 
 def test_error_type():
-    gptcode_log.setLevel("INFO")
-    gptcode_log.error("gptcode log error.")
-    gptcode_log.warning("gptcode log warning.")
-    gptcode_log.info("gptcode log info.")
-    assert gptcode_log.level == 20
+    codeinterpreter_log.setLevel("INFO")
+    codeinterpreter_log.error("codeinterpreter log error.")
+    codeinterpreter_log.warning("codeinterpreter log warning.")
+    codeinterpreter_log.info("codeinterpreter log info.")
+    assert codeinterpreter_log.level == 20

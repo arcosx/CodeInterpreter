@@ -1,8 +1,8 @@
 import logging
-from gptcode.sandbox.local_jupyter.manager import LocalJupyterManager
-import gptcode
+from codeinterpreter.sandbox.local_jupyter.manager import LocalJupyterManager
+import codeinterpreter
 
-logger = logging.getLogger(f"gptcode:{gptcode.__version__}")
+logger = logging.getLogger(f"codeinterpreter:{codeinterpreter.__version__}")
 logger.setLevel(logging.DEBUG)
 
 def main():

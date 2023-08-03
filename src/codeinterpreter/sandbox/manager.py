@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from gptcode.sandbox.sandbox import Sandbox
-from gptcode.sandbox.schema import SandboxResponse
+from codeinterpreter.sandbox.sandbox import Sandbox
+from codeinterpreter.sandbox.schema import SandboxResponse
 
 
 class SandboxManager(ABC):

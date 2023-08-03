@@ -1,11 +1,11 @@
 import logging
-from gptcode.sandbox.local_jupyter.manager import LocalJupyterManager
+from codeinterpreter.sandbox.local_jupyter.manager import LocalJupyterManager
 from notebook.services.kernels.kernelmanager import MappingKernelManager
 
-import gptcode
+import codeinterpreter
 import asyncio
 
-logger = logging.getLogger(f"gptcode:{gptcode.__version__}")
+logger = logging.getLogger(f"codeinterpreter:{codeinterpreter.__version__}")
 logger.setLevel(logging.DEBUG)
 
 async def calculate_add(manager:LocalJupyterManager)->int:

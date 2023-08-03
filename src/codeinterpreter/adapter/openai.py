@@ -1,5 +1,5 @@
-from gptcode.utils import import_openai
-from gptcode.utils.error import wrap_error
+from codeinterpreter.utils import import_openai
+from codeinterpreter.utils.error import wrap_error
 
 import_openai()
 

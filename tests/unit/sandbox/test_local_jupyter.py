@@ -3,7 +3,7 @@ import os
 
 import psutil
 
-from gptcode.sandbox.local_jupyter.manager import LocalJupyterManager
+from codeinterpreter.sandbox.local_jupyter.manager import LocalJupyterManager
 import tempfile
 from pathlib import Path
 
