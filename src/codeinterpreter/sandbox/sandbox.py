@@ -2,8 +2,8 @@ import os
 from abc import ABC, abstractmethod
 from typing import Union
 
-from codeinterpreter.sandbox.schema import (SandboxFile, SandboxRunOutput,
-                                    SandboxResponse)
+from codeinterpreter.sandbox.schema import (SandboxFile, SandboxResponse,
+                                            SandboxRunOutput)
 
 
 class Sandbox(ABC):

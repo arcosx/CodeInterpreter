@@ -1,11 +1,11 @@
 import asyncio
 import os
+import tempfile
+from pathlib import Path
 
 import psutil
 
 from codeinterpreter.sandbox.local_jupyter.manager import LocalJupyterManager
-import tempfile
-from pathlib import Path
 
 #  tips: clear all jupyter thread
 #  ps aux | grep jupyter | grep -v grep | awk '{ print $2 }' | xargs kill -9

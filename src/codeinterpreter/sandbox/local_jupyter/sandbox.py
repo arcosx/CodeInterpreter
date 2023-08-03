@@ -11,7 +11,8 @@ from websockets.sync.client import ClientConnection
 from websockets.sync.client import connect as ws_sync_connect
 
 from codeinterpreter.sandbox.sandbox import Sandbox
-from codeinterpreter.sandbox.schema import SandboxFile, SandboxRunOutput, SandboxResponse
+from codeinterpreter.sandbox.schema import (SandboxFile, SandboxResponse,
+                                            SandboxRunOutput)
 from codeinterpreter.utils.log import codeinterpreter_log
 
 

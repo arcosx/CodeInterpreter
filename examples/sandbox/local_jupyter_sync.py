@@ -1,6 +1,7 @@
 import logging
-from codeinterpreter.sandbox.local_jupyter.manager import LocalJupyterManager
+
 import codeinterpreter
+from codeinterpreter.sandbox.local_jupyter.manager import LocalJupyterManager
 
 logger = logging.getLogger(f"codeinterpreter:{codeinterpreter.__version__}")
 logger.setLevel(logging.DEBUG)
