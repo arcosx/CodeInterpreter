@@ -1,11 +1,9 @@
 import asyncio
 import os
-import shutil
 
 import psutil
 
 from gptcode.sandbox.local_jupyter.manager import LocalJupyterManager
-from gptcode.sandbox.schema import SandboxRunConfig
 import tempfile
 from pathlib import Path
 

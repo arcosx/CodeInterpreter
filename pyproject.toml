@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "gptcode"
+version = "0.0.1"
+description = "The Best Open Source LLM Code Interpreter."
+authors = ["arcosx <arcosx@outlook.com>"]
+readme = "README.md"
+license = "Apache-2.0"
+packages = [{ include = "gptcode", from = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+aiohttp = "3.8.5"
+pydantic = "2.1.1"
+requests = "2.31.0"
+websockets = "11.0.3"
+jupyter-kernel-gateway = "2.5.2"
+
+[tool.poetry.group.test.dependencies]
+psutil = "5.9.5"
+pytest = "7.4.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
