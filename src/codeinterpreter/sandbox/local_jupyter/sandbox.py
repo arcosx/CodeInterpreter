@@ -11,8 +11,11 @@ from websockets.sync.client import ClientConnection
 from websockets.sync.client import connect as ws_sync_connect
 
 from codeinterpreter.sandbox.sandbox import Sandbox
-from codeinterpreter.sandbox.schema import (SandboxFile, SandboxResponse,
-                                            SandboxRunOutput)
+from codeinterpreter.sandbox.schema import (
+    SandboxFile,
+    SandboxResponse,
+    SandboxRunOutput,
+)
 from codeinterpreter.utils.log import codeinterpreter_log
 
 
@@ -25,6 +28,7 @@ class LocalJupyterSandbox(Sandbox):
         workdir: str = None,
     ) -> None:
         super().__init__()
+        self.type = "local_jupyter"
         self.id = id
         self.ws_url = ws_url
         self.ws = ws
@@ -96,14 +100,18 @@ class LocalJupyterSandbox(Sandbox):
                 result += msg
             elif received_msg["header"]["msg_type"] == "display_data":
                 if "image/png" in received_msg["content"]["data"]:
-                    codeinterpreter_log.debug("Received [display_data] image/png output")
+                    codeinterpreter_log.debug(
+                        "Received [display_data] image/png output"
+                    )
                     return SandboxRunOutput(
                         type="image/png",
                         content=received_msg["content"]["data"]["image/png"],
                     )
 
                 elif "text/plain" in received_msg["content"]["data"]:
-                    codeinterpreter_log.debug("Received [display_data] text/plain output")
+                    codeinterpreter_log.debug(
+                        "Received [display_data] text/plain output"
+                    )
                     return SandboxRunOutput(
                         type="text",
                         content=received_msg["content"]["data"]["text/plain"],
@@ -125,7 +133,9 @@ class LocalJupyterSandbox(Sandbox):
                 and received_msg["parent_header"]["msg_id"] == msg_id
             ):
                 error = f"{received_msg['content']['ename']}: {received_msg['content']['evalue']}"
-                codeinterpreter_log.debug("Received [error], return the error %s" % error)
+                codeinterpreter_log.debug(
+                    "Received [error], return the error %s" % error
+                )
                 return SandboxRunOutput(type="error", content=error)
 
     async def arun(self, code: Union[str, os.PathLike]) -> SandboxRunOutput:
@@ -183,14 +193,18 @@ class LocalJupyterSandbox(Sandbox):
                 result += msg
             elif received_msg["header"]["msg_type"] == "display_data":
                 if "image/png" in received_msg["content"]["data"]:
-                    codeinterpreter_log.debug("Received [display_data] image/png output")
+                    codeinterpreter_log.debug(
+                        "Received [display_data] image/png output"
+                    )
                     return SandboxRunOutput(
                         type="image/png",
                         content=received_msg["content"]["data"]["image/png"],
                     )
 
                 elif "text/plain" in received_msg["content"]["data"]:
-                    codeinterpreter_log.debug("Received [display_data] text/plain output")
+                    codeinterpreter_log.debug(
+                        "Received [display_data] text/plain output"
+                    )
                     return SandboxRunOutput(
                         type="text",
                         content=received_msg["content"]["data"]["text/plain"],
@@ -212,7 +226,9 @@ class LocalJupyterSandbox(Sandbox):
                 and received_msg["parent_header"]["msg_id"] == msg_id
             ):
                 error = f"{received_msg['content']['ename']}: {received_msg['content']['evalue']}"
-                codeinterpreter_log.debug("Received [error], return the error %s", error)
+                codeinterpreter_log.debug(
+                    "Received [error], return the error %s", error
+                )
                 return SandboxRunOutput(type="error", content=error)
 
     def upload(self, file_name: str, content: bytes) -> SandboxResponse:

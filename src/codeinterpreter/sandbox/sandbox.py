@@ -2,23 +2,23 @@ import os
 from abc import ABC, abstractmethod
 from typing import Union
 
-from codeinterpreter.sandbox.schema import (SandboxFile, SandboxResponse,
-                                            SandboxRunOutput)
+from codeinterpreter.sandbox.schema import (
+    SandboxFile,
+    SandboxResponse,
+    SandboxRunOutput,
+)
 
 
 class Sandbox(ABC):
     id: str
+    type: str
 
     @abstractmethod
-    def run(
-        self, code: Union[str, os.PathLike]
-    ) -> SandboxRunOutput:
+    def run(self, code: Union[str, os.PathLike]) -> SandboxRunOutput:
         ...
 
     @abstractmethod
-    async def arun(
-        self, code: Union[str, os.PathLike]
-    ) -> SandboxRunOutput:
+    async def arun(self, code: Union[str, os.PathLike]) -> SandboxRunOutput:
         ...
 
     @abstractmethod

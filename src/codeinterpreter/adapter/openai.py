@@ -1,21 +1,14 @@
-from codeinterpreter.utils import import_openai
-from codeinterpreter.utils.error import wrap_error
-
-import_openai()
-
 import openai
 
+from codeinterpreter.adapter.adapter import Adapter
 
-class ChatCompletion(openai.ChatCompletion):
-    """The openai ChatCompletion Wrapper"""
+
+class OpenAI(Adapter):
+    def __init__(self) -> None:
+        super().__init__()
+        self.type = "openai"
 
     @classmethod
-    def _llm_handler(cls, *llm_args, **llm_kwargs):
-        try:
-            return (
-                super().create(*llm_args, **llm_kwargs)
-                if cls.llm is None
-                else cls.llm(*llm_args, **llm_kwargs)
-            )
-        except openai.OpenAIError as e:
-            raise wrap_error(e) from e
+    def llm_handler(cls, *llm_args, **llm_kwargs):
+        completion = openai.ChatCompletion.create(*llm_args, **llm_kwargs)
+        return completion
